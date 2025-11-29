@@ -2,7 +2,6 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Cria profissional admin
   let adminProf = await prisma.profissional.findFirst({ where: { nome: "Alberto Alexandre" } });
   if (!adminProf) {
     adminProf = await prisma.profissional.create({

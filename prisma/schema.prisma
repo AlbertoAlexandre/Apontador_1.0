@@ -1,8 +1,6 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -19,7 +17,6 @@ model Obra {
   Viagem     Viagem[]
   Ocorrencia Ocorrencia[] @relation("obra_ocorrencia")
   ClimaTempo ClimaTempo[]
-
   @@index([nome_obra], name: "idx_obra_nome_obra")
 }
 
@@ -33,7 +30,6 @@ model Veiculo {
   updated_at DateTime @updatedAt
   Viagem     Viagem[]
   Ocorrencia Ocorrencia[] @relation("veiculo_ocorrencia")
-
   @@index([placa], name: "idx_veiculo_placa")
 }
 
@@ -60,7 +56,6 @@ model Usuario {
   Profissional Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
   Permissao    Permissao?
   Viagem       Viagem[]
-
   @@index([usuario], name: "idx_usuario_usuario")
 }
 
@@ -94,11 +89,9 @@ model Viagem {
   descricao        String? 
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
-
   Obra    Obra    @relation(fields: [obraId], references: [id], onDelete: Cascade)
   Veiculo Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
   Usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
   @@index([obraId], name: "idx_viagem_obraId")
   @@index([veiculoId], name: "idx_viagem_veiculoId")
   @@index([usuarioId], name: "idx_viagem_usuarioId")
@@ -130,10 +123,8 @@ model Ocorrencia {
   indicador_preventiva Boolean  @default(false)
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
-
   Obra    Obra    @relation("obra_ocorrencia", fields: [obra_local_id], references: [id], onDelete: Cascade)
   Veiculo Veiculo? @relation("veiculo_ocorrencia", fields: [veiculo_id], references: [id], onDelete: SetNull)
-
   @@index([obra_local_id], name: "idx_ocorrencia_obra_local_id")
   @@index([veiculo_id], name: "idx_ocorrencia_veiculo_id")
 }
@@ -148,9 +139,7 @@ model ClimaTempo {
   observacoes    String? 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
-
   Obra Obra @relation(fields: [obra_local_id], references: [id], onDelete: Cascade)
-
   @@index([obra_local_id], name: "idx_climatempo_obra_local_id")
   @@index([data_ocorrencia], name: "idx_climatempo_data_ocorrencia")
 }
