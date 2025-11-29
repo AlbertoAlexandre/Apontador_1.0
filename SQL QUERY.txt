@@ -1,0 +1,324 @@
+-- ===========
+-- Apontador_1.0
+-- Estrutura de banco de dados PostgreSQL
+-- ===========
+
+-- Criar esquema público se necessário (geralmente já existe)
+-- CREATE SCHEMA IF NOT EXISTS public;
+
+-- -----------------------
+-- Tabelas principais
+-- -----------------------
+
+-- 1) Obra
+CREATE TABLE IF NOT EXISTS "Obra" (
+  id BIGSERIAL PRIMARY KEY,
+  nome_obra TEXT NOT NULL,
+  servico TEXT,
+  local TEXT,
+  ativa BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- Índice em nome_obra para buscas rápidas
+CREATE INDEX IF NOT EXISTS idx_obra_nome_obra ON "Obra"(nome_obra);
+
+-- 2) Veiculo
+CREATE TABLE IF NOT EXISTS "Veiculo" (
+  id BIGSERIAL PRIMARY KEY,
+  veiculo TEXT NOT NULL,
+  placa VARCHAR(32) NOT NULL,
+  cubagem_m3 DOUBLE PRECISION,
+  motorista TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT uniq_veiculo_placa UNIQUE (placa)
+);
+
+-- Índice em placa
+CREATE INDEX IF NOT EXISTS idx_veiculo_placa ON "Veiculo"(placa);
+
+-- 3) Profissional
+CREATE TABLE IF NOT EXISTS "Profissional" (
+  id BIGSERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  funcao TEXT,
+  contato TEXT,
+  email VARCHAR(255),
+  terceirizado BOOLEAN NOT NULL DEFAULT FALSE,
+  empresa_terceirizada TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 4) Usuario
+CREATE TABLE IF NOT EXISTS "Usuario" (
+  id BIGSERIAL PRIMARY KEY,
+  usuario VARCHAR(150) NOT NULL,
+  senha TEXT NOT NULL,
+  profissionalId BIGINT, -- FK opcional para Profissional
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT uniq_usuario_usuario UNIQUE (usuario)
+);
+
+-- Índice em usuario para buscas rápidas
+CREATE INDEX IF NOT EXISTS idx_usuario_usuario ON "Usuario"(usuario);
+
+-- FK Usuario -> Profissional (opcional). ON DELETE SET NULL para manter histórico de usuário caso profissional seja removido.
+ALTER TABLE "Usuario"
+  ADD CONSTRAINT fk_usuario_profissional
+  FOREIGN KEY (profissionalId) REFERENCES "Profissional"(id) ON DELETE SET NULL;
+
+-- 5) Permissao
+CREATE TABLE IF NOT EXISTS "Permissao" (
+  id BIGSERIAL PRIMARY KEY,
+  usuarioId BIGINT NOT NULL UNIQUE, -- uma linha de permissões por usuário
+  adm BOOLEAN NOT NULL DEFAULT FALSE,
+  dashboard BOOLEAN NOT NULL DEFAULT FALSE,
+  registrar_viagem BOOLEAN NOT NULL DEFAULT FALSE,
+  obras BOOLEAN NOT NULL DEFAULT FALSE,
+  veiculo BOOLEAN NOT NULL DEFAULT FALSE,
+  profissionais BOOLEAN NOT NULL DEFAULT FALSE,
+  diaria BOOLEAN NOT NULL DEFAULT FALSE,
+  meu_veiculo BOOLEAN NOT NULL DEFAULT FALSE,
+  painel_controle BOOLEAN NOT NULL DEFAULT FALSE,
+  visualizar_ocorrencias_transportes BOOLEAN NOT NULL DEFAULT FALSE,
+  visualizar_clima_tempo BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- FK Permissao -> Usuario (ON DELETE CASCADE: ao remover usuário, remove permissões)
+ALTER TABLE "Permissao"
+  ADD CONSTRAINT fk_permissao_usuario
+  FOREIGN KEY (usuarioId) REFERENCES "Usuario"(id) ON DELETE CASCADE;
+
+-- 6) Viagem
+CREATE TABLE IF NOT EXISTS "Viagem" (
+  id BIGSERIAL PRIMARY KEY,
+  obraId BIGINT NOT NULL,
+  veiculoId BIGINT NOT NULL,
+  usuarioId BIGINT NOT NULL,
+  nome_usuario TEXT,
+  data_hora TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  quantidade_viagens INTEGER NOT NULL DEFAULT 1,
+  descricao TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- FKs Viagem -> Obra, Veiculo, Usuario com ON DELETE CASCADE
+ALTER TABLE "Viagem"
+  ADD CONSTRAINT fk_viagem_obra
+  FOREIGN KEY (obraId) REFERENCES "Obra"(id) ON DELETE CASCADE;
+
+ALTER TABLE "Viagem"
+  ADD CONSTRAINT fk_viagem_veiculo
+  FOREIGN KEY (veiculoId) REFERENCES "Veiculo"(id) ON DELETE CASCADE;
+
+ALTER TABLE "Viagem"
+  ADD CONSTRAINT fk_viagem_usuario
+  FOREIGN KEY (usuarioId) REFERENCES "Usuario"(id) ON DELETE CASCADE;
+
+-- Índices úteis: por obraId, veiculoId, usuarioId, data_hora
+CREATE INDEX IF NOT EXISTS idx_viagem_obraId ON "Viagem"(obraId);
+CREATE INDEX IF NOT EXISTS idx_viagem_veiculoId ON "Viagem"(veiculoId);
+CREATE INDEX IF NOT EXISTS idx_viagem_usuarioId ON "Viagem"(usuarioId);
+CREATE INDEX IF NOT EXISTS idx_viagem_data_hora ON "Viagem"(data_hora);
+
+-- 7) EmpresaConfig
+CREATE TABLE IF NOT EXISTS "EmpresaConfig" (
+  id BIGSERIAL PRIMARY KEY,
+  nome_empresa TEXT NOT NULL,
+  telefone VARCHAR(64),
+  endereco TEXT,
+  cnpj VARCHAR(64),
+  logomarca TEXT, -- caminho/URL opcional
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- 8) Ocorrencia
+CREATE TABLE IF NOT EXISTS "Ocorrencia" (
+  id BIGSERIAL PRIMARY KEY,
+  obra_local_id BIGINT NOT NULL, -- referencia para Obra
+  veiculo_id BIGINT, -- referencia para Veiculo (pode ser null)
+  motivo_paralizacao TEXT,
+  tipo_manutencao TEXT,
+  descricao_manutencao TEXT,
+  data_hora_inicio TIMESTAMP WITH TIME ZONE,
+  data_hora_retorno TIMESTAMP WITH TIME ZONE,
+  observacoes TEXT,
+  status VARCHAR(100),
+  indicador_preventiva BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- FKs Ocorrencia -> Obra, Veiculo
+ALTER TABLE "Ocorrencia"
+  ADD CONSTRAINT fk_ocorrencia_obra
+  FOREIGN KEY (obra_local_id) REFERENCES "Obra"(id) ON DELETE CASCADE;
+
+ALTER TABLE "Ocorrencia"
+  ADD CONSTRAINT fk_ocorrencia_veiculo
+  FOREIGN KEY (veiculo_id) REFERENCES "Veiculo"(id) ON DELETE SET NULL;
+
+-- Índices para consultas por obra_local_id e veiculo_id
+CREATE INDEX IF NOT EXISTS idx_ocorrencia_obra_local_id ON "Ocorrencia"(obra_local_id);
+CREATE INDEX IF NOT EXISTS idx_ocorrencia_veiculo_id ON "Ocorrencia"(veiculo_id);
+
+-- 9) ClimaTempo
+CREATE TABLE IF NOT EXISTS "ClimaTempo" (
+  id BIGSERIAL PRIMARY KEY,
+  data_ocorrencia DATE NOT NULL,
+  obra_local_id BIGINT NOT NULL,
+  tipo_chuva VARCHAR(100),
+  hora_inicio TIME,
+  hora_fim TIME,
+  observacoes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- FK ClimaTempo -> Obra
+ALTER TABLE "ClimaTempo"
+  ADD CONSTRAINT fk_climatempo_obra
+  FOREIGN KEY (obra_local_id) REFERENCES "Obra"(id) ON DELETE CASCADE;
+
+-- Índice para consultas por obra_local_id e data_ocorrencia
+CREATE INDEX IF NOT EXISTS idx_climatempo_obra_local_id ON "ClimaTempo"(obra_local_id);
+CREATE INDEX IF NOT EXISTS idx_climatempo_data_ocorrencia ON "ClimaTempo"(data_ocorrencia);
+
+-- -----------------------
+-- Restrições adicionais e conveniências
+-- -----------------------
+
+-- Trigger/Function para atualizar updated_at automaticamente em updates
+CREATE OR REPLACE FUNCTION trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Adicionar triggers para as tabelas que possuem updated_at
+DO $$
+BEGIN
+  -- Obra
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_obra_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_obra_set_updated_at
+      BEFORE UPDATE ON "Obra"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Veiculo
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_veiculo_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_veiculo_set_updated_at
+      BEFORE UPDATE ON "Veiculo"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Profissional
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_profissional_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_profissional_set_updated_at
+      BEFORE UPDATE ON "Profissional"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Usuario
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_usuario_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_usuario_set_updated_at
+      BEFORE UPDATE ON "Usuario"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Permissao
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_permissao_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_permissao_set_updated_at
+      BEFORE UPDATE ON "Permissao"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Viagem
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_viagem_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_viagem_set_updated_at
+      BEFORE UPDATE ON "Viagem"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- EmpresaConfig
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_empresaconfig_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_empresaconfig_set_updated_at
+      BEFORE UPDATE ON "EmpresaConfig"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- Ocorrencia
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ocorrencia_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_ocorrencia_set_updated_at
+      BEFORE UPDATE ON "Ocorrencia"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+  -- ClimaTempo
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'trg_climatempo_set_updated_at'
+  ) THEN
+    CREATE TRIGGER trg_climatempo_set_updated_at
+      BEFORE UPDATE ON "ClimaTempo"
+      FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+  END IF;
+
+END;
+$$ LANGUAGE plpgsql;
+
+-- -----------------------
+-- Permissões (exemplo)
+-- -----------------------
+-- Ajuste conforme seu modelo de roles. Aqui definimos permissões genéricas:
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO PUBLIC;
+-- Em produção, restrinja privilégios adequadamente.
+
+-- -----------------------
+-- Exemplos de consultas e integração REST-friendly
+-- -----------------------
+
+-- Exemplo: listar viagens com join para exibir dados relacionados
+-- SELECT v.id, v.data_hora, v.quantidade_viagens, o.nome_obra, ve.veiculo, u.usuario
+-- FROM "Viagem" v
+-- JOIN "Obra" o ON v.obraId = o.id
+-- JOIN "Veiculo" ve ON v.veiculoId = ve.id
+-- JOIN "Usuario" u ON v.usuarioId = u.id
+-- ORDER BY v.data_hora DESC;
+
+-- -----------------------
+-- Finalização
+-- -----------------------
+
+-- Confirmação: criar funções e índices extras conforme for necessário para performance.
+-- Recomendações adicionais:
+--  - Criar índices compostos conforme consultas (ex: obraId + data_hora) se relatórios exigirem.
+--  - Revisar políticas de RLS caso esteja usando Supabase Auth (usar auth.uid() nas policies).
+--  - Configurar backups e monitoramento.
+
+-- Fim do script

@@ -1,8 +1,156 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-// ... Todos modelos conforme requisitos Apontador (Obra, Viagem, Veiculo, Profissional, Usuario, Permissao, EmpresaConfig, Ocorrencias, ClimaTempo) ...
+
+model Obra {
+  id         BigInt   @id @default(autoincrement())
+  nome_obra  String
+  servico    String? 
+  local      String? 
+  ativa      Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  Viagem     Viagem[]
+  Ocorrencia Ocorrencia[] @relation("obra_ocorrencia")
+  ClimaTempo ClimaTempo[]
+
+  @@index([nome_obra], name: "idx_obra_nome_obra")
+}
+
+model Veiculo {
+  id         BigInt   @id @default(autoincrement())
+  veiculo    String
+  placa      String   @unique
+  cubagem_m3 Float? 
+  motorista  String? 
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  Viagem     Viagem[]
+  Ocorrencia Ocorrencia[] @relation("veiculo_ocorrencia")
+
+  @@index([placa], name: "idx_veiculo_placa")
+}
+
+model Profissional {
+  id                 BigInt   @id @default(autoincrement())
+  nome               String
+  funcao             String? 
+  contato            String? 
+  email              String? 
+  terceirizado       Boolean  @default(false)
+  empresa_terceirizada String? 
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  Usuario            Usuario?
+}
+
+model Usuario {
+  id           BigInt    @id @default(autoincrement())
+  usuario      String    @unique
+  senha        String
+  profissionalId BigInt? 
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  Profissional Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
+  Permissao    Permissao?
+  Viagem       Viagem[]
+
+  @@index([usuario], name: "idx_usuario_usuario")
+}
+
+model Permissao {
+  id                                     BigInt  @id @default(autoincrement())
+  usuarioId                              BigInt  @unique
+  adm                                    Boolean @default(false)
+  dashboard                              Boolean @default(false)
+  registrar_viagem                       Boolean @default(false)
+  obras                                  Boolean @default(false)
+  veiculo                                Boolean @default(false)
+  profissionais                          Boolean @default(false)
+  diaria                                 Boolean @default(false)
+  meu_veiculo                            Boolean @default(false)
+  painel_controle                        Boolean @default(false)
+  visualizar_ocorrencias_transportes     Boolean @default(false)
+  visualizar_clima_tempo                 Boolean @default(false)
+  created_at                             DateTime @default(now())
+  updated_at                             DateTime @updatedAt
+  Usuario                                Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+}
+
+model Viagem {
+  id               BigInt   @id @default(autoincrement())
+  obraId           BigInt
+  veiculoId        BigInt
+  usuarioId        BigInt
+  nome_usuario     String? 
+  data_hora        DateTime @default(now())
+  quantidade_viagens Int    @default(1)
+  descricao        String? 
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  Obra    Obra    @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  Veiculo Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  Usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([obraId], name: "idx_viagem_obraId")
+  @@index([veiculoId], name: "idx_viagem_veiculoId")
+  @@index([usuarioId], name: "idx_viagem_usuarioId")
+  @@index([data_hora], name: "idx_viagem_data_hora")
+}
+
+model EmpresaConfig {
+  id         BigInt   @id @default(autoincrement())
+  nome_empresa String
+  telefone   String? 
+  endereco   String? 
+  cnpj       String? 
+  logomarca  String? 
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model Ocorrencia {
+  id                  BigInt   @id @default(autoincrement())
+  obra_local_id       BigInt
+  veiculo_id          BigInt?
+  motivo_paralizacao  String? 
+  tipo_manutencao     String? 
+  descricao_manutencao String? 
+  data_hora_inicio    DateTime? 
+  data_hora_retorno   DateTime? 
+  observacoes         String? 
+  status              String? 
+  indicador_preventiva Boolean  @default(false)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  Obra    Obra    @relation("obra_ocorrencia", fields: [obra_local_id], references: [id], onDelete: Cascade)
+  Veiculo Veiculo? @relation("veiculo_ocorrencia", fields: [veiculo_id], references: [id], onDelete: SetNull)
+
+  @@index([obra_local_id], name: "idx_ocorrencia_obra_local_id")
+  @@index([veiculo_id], name: "idx_ocorrencia_veiculo_id")
+}
+
+model ClimaTempo {
+  id             BigInt   @id @default(autoincrement())
+  data_ocorrencia DateTime @db.Date
+  obra_local_id  BigInt
+  tipo_chuva     String? 
+  hora_inicio    DateTime? @db.Time
+  hora_fim       DateTime? @db.Time
+  observacoes    String? 
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  Obra Obra @relation(fields: [obra_local_id], references: [id], onDelete: Cascade)
+
+  @@index([obra_local_id], name: "idx_climatempo_obra_local_id")
+  @@index([data_ocorrencia], name: "idx_climatempo_data_ocorrencia")
+}
