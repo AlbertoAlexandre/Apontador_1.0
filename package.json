@@ -15,7 +15,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "postinstall": "npx prisma generate",
-    "vercel-build": "npx prisma generate && cd app && npm install && npm run build"
+    "build": "npx prisma generate && cd app && npm install && npm run build && cp -r app/build/* ."
   },
   "dependencies": {
     "@prisma/client": "^5.6.0",
