@@ -52,7 +52,7 @@ model Usuario {
   id           BigInt    @id @default(autoincrement())
   usuario      String    @unique
   senha        String
-  profissionalId BigInt? 
+  profissionalId BigInt?  @unique
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
   Profissional Profissional? @relation(fields: [profissionalId], references: [id], onDelete: SetNull)
