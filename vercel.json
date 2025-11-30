@@ -1,8 +1,38 @@
 {
+  "version": 2,
   "builds": [
-    { "src": "api/index.js", "use": "@vercel/node" }
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "app/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "api/index.js" }
-  ]
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/app/build/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app/build/index.html"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret", 
+    "SUPABASE_KEY": "@supabase_key",
+    "SUPABASE_URL": "@supabase_url"
+  },
+  "installCommand": "npm install && cd app && npm install",
+  "buildCommand": "npx prisma generate && cd app && npm run build"
 }
