@@ -18,6 +18,7 @@ model Obra {
   Ocorrencia Ocorrencia[] @relation("obra_ocorrencia")
   ClimaTempo ClimaTempo[]
   @@index([nome_obra], name: "idx_obra_nome_obra")
+  @@index([nome_obra, servico, local], name: "idx_obra_unique_combo")
 }
 
 model Veiculo {
@@ -35,7 +36,7 @@ model Veiculo {
 
 model Profissional {
   id                 BigInt   @id @default(autoincrement())
-  nome               String
+  nome               String   @unique
   funcao             String? 
   contato            String? 
   email              String? 
@@ -44,6 +45,7 @@ model Profissional {
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
   Usuario            Usuario?
+  @@index([nome], name: "idx_profissional_nome")
 }
 
 model Usuario {
@@ -84,6 +86,10 @@ model Viagem {
   veiculoId        BigInt
   usuarioId        BigInt
   nome_usuario     String? 
+  nome_obra        String?  // Para compatibilidade com Python
+  servico          String?  // Para compatibilidade com Python
+  local            String?  // Para compatibilidade com Python
+  veiculo          String?  // Para compatibilidade com Python
   data_hora        DateTime @default(now())
   quantidade_viagens Int    @default(1)
   descricao        String? 
@@ -96,6 +102,7 @@ model Viagem {
   @@index([veiculoId], name: "idx_viagem_veiculoId")
   @@index([usuarioId], name: "idx_viagem_usuarioId")
   @@index([data_hora], name: "idx_viagem_data_hora")
+  @@index([nome_obra], name: "idx_viagem_nome_obra")
 }
 
 model EmpresaConfig {

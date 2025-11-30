@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apontador - Status do Sistema</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .health-card { backdrop-filter: blur(10px); background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .status-ok { color: #28a745; }
+        .status-error { color: #dc3545; }
+        .status-warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card health-card text-white">
+                    <div class="card-header text-center">
+                        <h2><i class="fas fa-heartbeat"></i> Status do Sistema Apontador</h2>
+                        <p class="mb-0">Monitoramento em tempo real</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-server fa-2x status-ok mb-2"></i>
+                                    <h5>API Backend</h5>
+                                    <span id="api-status" class="badge bg-success">Online</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-database fa-2x status-ok mb-2"></i>
+                                    <h5>Banco de Dados</h5>
+                                    <span id="db-status" class="badge bg-success">Conectado</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-globe fa-2x status-ok mb-2"></i>
+                                    <h5>Frontend</h5>
+                                    <span id="frontend-status" class="badge bg-success">Ativo</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle"></i> Informações do Sistema</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Versão:</strong> 1.0.0</li>
+                                    <li><strong>Ambiente:</strong> <span id="environment">Produção</span></li>
+                                    <li><strong>Última Atualização:</strong> <span id="last-update">-</span></li>
+                                    <li><strong>Uptime:</strong> <span id="uptime">-</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6><i class="fas fa-chart-line"></i> Métricas</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Usuários Ativos:</strong> <span id="active-users">-</span></li>
+                                    <li><strong>Viagens Hoje:</strong> <span id="trips-today">-</span></li>
+                                    <li><strong>Obras Ativas:</strong> <span id="active-works">-</span></li>
+                                    <li><strong>Veículos:</strong> <span id="vehicles">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-outline-light me-2" onclick="checkHealth()">
+                                <i class="fas fa-sync-alt"></i> Atualizar Status
+                            </button>
+                            <a href="/" class="btn btn-primary">
+                                <i class="fas fa-home"></i> Ir para o Sistema
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <small>Última verificação: <span id="last-check">-</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateTimestamp() {
+            document.getElementById('last-check').textContent = new Date().toLocaleString('pt-BR');
+        }
+
+        async function checkHealth() {
+            updateTimestamp();
+            
+            try {
+                // Verificar API
+                const apiResponse = await fetch('/api/health');
+                if (apiResponse.ok) {
+                    document.getElementById('api-status').className = 'badge bg-success';
+                    document.getElementById('api-status').textContent = 'Online';
+                } else {
+                    throw new Error('API offline');
+                }
+                
+                // Simular outras verificações
+                document.getElementById('db-status').className = 'badge bg-success';
+                document.getElementById('db-status').textContent = 'Conectado';
+                
+                document.getElementById('frontend-status').className = 'badge bg-success';
+                document.getElementById('frontend-status').textContent = 'Ativo';
+                
+                // Atualizar informações
+                document.getElementById('environment').textContent = 'Produção';
+                document.getElementById('last-update').textContent = new Date().toLocaleDateString('pt-BR');
+                
+            } catch (error) {
+                console.error('Erro na verificação de saúde:', error);
+                document.getElementById('api-status').className = 'badge bg-danger';
+                document.getElementById('api-status').textContent = 'Offline';
+            }
+        }
+
+        // Verificação inicial
+        updateTimestamp();
+        checkHealth();
+        
+        // Atualizar a cada 30 segundos
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>

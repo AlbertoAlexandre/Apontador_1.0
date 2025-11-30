@@ -1,0 +1,16 @@
+nome_obra,servico,local,ativa
+"Obra Centro Comercial","Transporte de Concreto","Setor A",true
+"Obra Centro Comercial","Transporte de Areia","Setor A",true
+"Obra Centro Comercial","Transporte de Brita","Setor B",true
+"Residencial Jardins","Transporte de Concreto","Bloco 1",true
+"Residencial Jardins","Transporte de Areia","Bloco 1",true
+"Residencial Jardins","Transporte de Concreto","Bloco 2",true
+"Ponte Rio Verde","Transporte de Concreto","Pilar Norte",true
+"Ponte Rio Verde","Transporte de Aço","Pilar Norte",true
+"Ponte Rio Verde","Transporte de Concreto","Pilar Sul",true
+"Estrada Municipal","Transporte de Asfalto","KM 10",true
+"Estrada Municipal","Transporte de Brita","KM 15",true
+"Escola Técnica","Transporte de Concreto","Ala Principal",true
+"Escola Técnica","Transporte de Areia","Quadra Esportiva",true
+"Hospital Regional","Transporte de Concreto","Ala Norte",true
+"Hospital Regional","Transporte de Concreto","Ala Sul",true
