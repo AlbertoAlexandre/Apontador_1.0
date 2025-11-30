@@ -1,8 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const { PrismaClient } = require("@prisma/client");
+const { createClient } = require('@supabase/supabase-js');
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
+
+// Configuração do Supabase
+const supabaseUrl = 'https://cbljnvxqadnajothjjay.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 const prisma = new PrismaClient({
